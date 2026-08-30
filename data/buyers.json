@@ -1,0 +1,7 @@
+[
+  { "crop": "onion", "district": "nashik", "quantityNeeded": "2 tons", "buyerName": "Fresh Mart Wholesale", "contact": "+919876543210" },
+  { "crop": "tomato", "district": "pune", "quantityNeeded": "1.5 tons", "buyerName": "GreenLeaf Distributors", "contact": "+919876543211" },
+  { "crop": "potato", "district": "nagpur", "quantityNeeded": "3 tons", "buyerName": "Vidarbha Agro Traders", "contact": "+919876543212" },
+  { "crop": "onion", "district": "kolhapur", "quantityNeeded": "2.5 tons", "buyerName": "Sahyadri Fresh Produce", "contact": "+919876543213" },
+  { "crop": "cabbage", "district": "aurangabad", "quantityNeeded": "1 ton", "buyerName": "Marathwada Veggie Mart", "contact": "+919876543214" }
+]

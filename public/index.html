@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mandi Price Bot — Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f0f4f3;
+      color: #1a1a1a;
+      padding: 2rem;
+    }
+    h1 { text-align: center; margin-bottom: 0.25rem; color: #2d6a4f; }
+    .subtitle { text-align: center; color: #666; margin-bottom: 2rem; font-size: 0.95rem; }
+    .cards {
+      display: flex; gap: 1.5rem; justify-content: center;
+      flex-wrap: wrap; margin-bottom: 2rem;
+    }
+    .card {
+      background: #fff; border-radius: 12px; padding: 1.5rem 2rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      min-width: 200px; text-align: center;
+    }
+    .card .value { font-size: 2rem; font-weight: 700; color: #2d6a4f; }
+    .card .label { font-size: 0.85rem; color: #666; margin-top: 0.25rem; }
+    .charts {
+      display: flex; gap: 2rem; justify-content: center;
+      flex-wrap: wrap; max-width: 1000px; margin: 0 auto;
+    }
+    .chart-box {
+      background: #fff; border-radius: 12px; padding: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08); flex: 1; min-width: 300px;
+    }
+    .chart-box h3 { margin-bottom: 1rem; color: #333; font-size: 1rem; }
+    canvas { max-height: 300px; }
+    .refresh-note {
+      text-align: center; margin-top: 1.5rem; font-size: 0.8rem; color: #999;
+    }
+    .test-panel {
+      max-width: 600px; margin: 2rem auto 0; background: #fff;
+      border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .test-panel h3 { margin-bottom: 0.75rem; color: #333; }
+    .test-input-row { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+    .test-input-row input {
+      flex: 1; padding: 0.5rem 0.75rem; border: 1px solid #ccc;
+      border-radius: 8px; font-size: 0.95rem;
+    }
+    .test-input-row button {
+      padding: 0.5rem 1.25rem; background: #2d6a4f; color: #fff;
+      border: none; border-radius: 8px; cursor: pointer; font-size: 0.95rem;
+    }
+    .test-input-row button:hover { background: #1b4332; }
+    #test-result {
+      background: #f8f9fa; border-radius: 8px; padding: 1rem;
+      white-space: pre-wrap; font-size: 0.9rem; color: #333;
+      min-height: 60px; border: 1px solid #e9ecef;
+    }
+  </style>
+</head>
+<body>
+  <h1>🌾 Mandi Price Bot</h1>
+  <p class="subtitle">WhatsApp/SMS Farmer Price Discovery — Live Dashboard</p>
+
+  <!-- Summary cards -->
+  <div class="cards">
+    <div class="card">
+      <div class="value" id="totalMessages">—</div>
+      <div class="label">Total Messages</div>
+    </div>
+    <div class="card">
+      <div class="value" id="topCrop">—</div>
+      <div class="label">Most Queried Crop</div>
+    </div>
+    <div class="card">
+      <div class="value" id="topDistrict">—</div>
+      <div class="label">Most Queried District</div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="charts">
+    <div class="chart-box">
+      <h3>Crop Query Frequency</h3>
+      <canvas id="cropChart"></canvas>
+    </div>
+    <div class="chart-box">
+      <h3>District Query Frequency</h3>
+      <canvas id="districtChart"></canvas>
+    </div>
+  </div>
+
+  <p class="refresh-note">Auto-refreshes every 10 seconds</p>
+
+  <!-- Quick test panel -->
+  <div class="test-panel">
+    <h3>🧪 Quick Test</h3>
+    <div class="test-input-row">
+      <input type="text" id="test-msg" placeholder='Try "onion nashik" or "price of tomato in pune"' />
+      <button onclick="testMessage()">Send</button>
+    </div>
+    <div id="test-result">Response will appear here...</div>
+  </div>
+
+  <script>
+    let cropChart, districtChart;
+
+    // Colour palette for charts
+    const COLORS = [
+      '#2d6a4f','#40916c','#52b788','#74c69d','#95d5b2',
+      '#b7e4c7','#d8f3dc','#1b4332','#081c15','#a7c957',
+    ];
+
+    /** Fetch /api/stats and update the dashboard */
+    async function refreshStats() {
+      try {
+        const res = await fetch('/api/stats');
+        const data = await res.json();
+
+        // Update cards
+        document.getElementById('totalMessages').textContent = data.totalMessages;
+        document.getElementById('topCrop').textContent = capitalize(data.mostQueriedCrop);
+        document.getElementById('topDistrict').textContent = capitalize(data.mostQueriedDistrict);
+
+        // Update crop chart
+        const cropLabels = Object.keys(data.cropCounts).map(capitalize);
+        const cropValues = Object.values(data.cropCounts);
+        updateChart('cropChart', cropLabels, cropValues, 'cropChart');
+
+        // Update district chart
+        const distLabels = Object.keys(data.districtCounts).map(capitalize);
+        const distValues = Object.values(data.districtCounts);
+        updateChart('districtChart', distLabels, distValues, 'districtChart');
+      } catch (e) {
+        console.error('Failed to fetch stats:', e);
+      }
+    }
+
+    function updateChart(canvasId, labels, values, chartRef) {
+      const ctx = document.getElementById(canvasId).getContext('2d');
+
+      // Destroy existing chart if any
+      if (chartRef === 'cropChart' && cropChart) cropChart.destroy();
+      if (chartRef === 'districtChart' && districtChart) districtChart.destroy();
+
+      const chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Queries',
+            data: values,
+            backgroundColor: labels.map((_, i) => COLORS[i % COLORS.length]),
+            borderRadius: 6,
+          }],
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, ticks: { stepSize: 1 } },
+          },
+        },
+      });
+
+      if (chartRef === 'cropChart') cropChart = chart;
+      if (chartRef === 'districtChart') districtChart = chart;
+    }
+
+    function capitalize(str) {
+      if (!str || str === 'N/A') return str;
+      return str.replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    /** Test a message via the GET /api/test-reply endpoint */
+    async function testMessage() {
+      const msg = document.getElementById('test-msg').value.trim();
+      if (!msg) return;
+      try {
+        const res = await fetch(`/api/test-reply?message=${encodeURIComponent(msg)}`);
+        const data = await res.json();
+        document.getElementById('test-result').textContent = data.reply;
+        refreshStats(); // refresh stats after the query
+      } catch (e) {
+        document.getElementById('test-result').textContent = 'Error: ' + e.message;
+      }
+    }
+
+    // Enter key support for the test input
+    document.getElementById('test-msg').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') testMessage();
+    });
+
+    // Initial load + auto-refresh
+    refreshStats();
+    setInterval(refreshStats, 10000);
+  </script>
+</body>
+</html>

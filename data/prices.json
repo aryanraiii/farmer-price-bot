@@ -1,0 +1,353 @@
+[
+  {
+    "crop": "onion",
+    "district": "nashik",
+    "priceThisWeek": 3993.96,
+    "priceLastWeek": 3502.07,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "onion",
+    "district": "pune",
+    "priceThisWeek": 3115.9,
+    "priceLastWeek": 3152.65,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "onion",
+    "district": "nagpur",
+    "priceThisWeek": 4027.62,
+    "priceLastWeek": 3355.67,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "onion",
+    "district": "kolhapur",
+    "priceThisWeek": 2494.04,
+    "priceLastWeek": 2363.29,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "onion",
+    "district": "aurangabad",
+    "priceThisWeek": 3137.83,
+    "priceLastWeek": 2764.89,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "tomato",
+    "district": "nashik",
+    "priceThisWeek": 1267.84,
+    "priceLastWeek": 1425.51,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "tomato",
+    "district": "pune",
+    "priceThisWeek": 973.69,
+    "priceLastWeek": 1281.71,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "tomato",
+    "district": "nagpur",
+    "priceThisWeek": 1859.16,
+    "priceLastWeek": 1931.88,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "tomato",
+    "district": "kolhapur",
+    "priceThisWeek": 966.42,
+    "priceLastWeek": 1023.01,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "tomato",
+    "district": "aurangabad",
+    "priceThisWeek": 662.5,
+    "priceLastWeek": 1083.33,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "potato",
+    "district": "nashik",
+    "priceThisWeek": 850.0,
+    "priceLastWeek": 850.0,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "potato",
+    "district": "pune",
+    "priceThisWeek": 1104.59,
+    "priceLastWeek": 1137.89,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "potato",
+    "district": "nagpur",
+    "priceThisWeek": 1427.7,
+    "priceLastWeek": 1196.58,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "potato",
+    "district": "kolhapur",
+    "priceThisWeek": 1800.0,
+    "priceLastWeek": 1750.0,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "potato",
+    "district": "aurangabad",
+    "priceThisWeek": 937.5,
+    "priceLastWeek": 1050.0,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "cabbage",
+    "district": "nashik",
+    "priceThisWeek": 1219.29,
+    "priceLastWeek": 1337.7,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "cabbage",
+    "district": "pune",
+    "priceThisWeek": 1047.92,
+    "priceLastWeek": 1195.53,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "cabbage",
+    "district": "nagpur",
+    "priceThisWeek": 1518.68,
+    "priceLastWeek": 1669.25,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "cabbage",
+    "district": "kolhapur",
+    "priceThisWeek": 899.32,
+    "priceLastWeek": 1044.32,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "cabbage",
+    "district": "aurangabad",
+    "priceThisWeek": 875.0,
+    "priceLastWeek": 1500.0,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "cauliflower",
+    "district": "nashik",
+    "priceThisWeek": 983.86,
+    "priceLastWeek": 1471.36,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "cauliflower",
+    "district": "pune",
+    "priceThisWeek": 1500.62,
+    "priceLastWeek": 2035.05,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "cauliflower",
+    "district": "nagpur",
+    "priceThisWeek": 2639.8,
+    "priceLastWeek": 3578.24,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "cauliflower",
+    "district": "kolhapur",
+    "priceThisWeek": 1133.61,
+    "priceLastWeek": 1401.33,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "cauliflower",
+    "district": "aurangabad",
+    "priceThisWeek": 1250.0,
+    "priceLastWeek": 2216.67,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "brinjal",
+    "district": "nashik",
+    "priceThisWeek": 3472.58,
+    "priceLastWeek": 4760.11,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "brinjal",
+    "district": "pune",
+    "priceThisWeek": 2199.58,
+    "priceLastWeek": 2619.54,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "brinjal",
+    "district": "nagpur",
+    "priceThisWeek": 1764.03,
+    "priceLastWeek": 2179.04,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "brinjal",
+    "district": "kolhapur",
+    "priceThisWeek": 2413.82,
+    "priceLastWeek": 2630.84,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "brinjal",
+    "district": "aurangabad",
+    "priceThisWeek": 1566.67,
+    "priceLastWeek": 2400.0,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "garlic",
+    "district": "nashik",
+    "priceThisWeek": 16040.0,
+    "priceLastWeek": 10700.0,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "garlic",
+    "district": "pune",
+    "priceThisWeek": 15127.15,
+    "priceLastWeek": 14960.12,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "garlic",
+    "district": "nagpur",
+    "priceThisWeek": 16702.37,
+    "priceLastWeek": 15534.76,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "garlic",
+    "district": "aurangabad",
+    "priceThisWeek": 17466.67,
+    "priceLastWeek": 13866.67,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "green chilli",
+    "district": "nashik",
+    "priceThisWeek": 4050.74,
+    "priceLastWeek": 4375.0,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "green chilli",
+    "district": "pune",
+    "priceThisWeek": 2800.42,
+    "priceLastWeek": 3340.08,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "green chilli",
+    "district": "nagpur",
+    "priceThisWeek": 2966.58,
+    "priceLastWeek": 3661.93,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "green chilli",
+    "district": "kolhapur",
+    "priceThisWeek": 3020.81,
+    "priceLastWeek": 3154.91,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  },
+  {
+    "crop": "green chilli",
+    "district": "aurangabad",
+    "priceThisWeek": 2041.67,
+    "priceLastWeek": 2783.33,
+    "unit": "quintal",
+    "weekEnding": "2026-08-28",
+    "source": "Agmarknet Maharashtra daily modal price, real 7-day avg"
+  }
+]
