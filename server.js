@@ -105,11 +105,12 @@ app.post('/webhook/incoming', (req, res) => {
 
   console.log(`   Plain reply: ${plainReply.substring(0, 120)}...`);
 
-  // 5. Simplest possible TwiML — no `to` attribute (inline reply to incoming message).
-  //    Adding `to` causes Twilio to treat it as a new outbound message (which needs templates).
-  //    Without `to`, Twilio replies directly to the sender of the incoming webhook.
-  const twimlStr = `<?xml version="1.0" encoding="UTF-8"?><Response><Message>${plainReply}</Message></Response>`;
+  // Use official Twilio builder to guarantee correct XML formatting
+  const { MessagingResponse } = require('twilio').twiml;
+  const twiml = new MessagingResponse();
+  twiml.message(plainReply);
 
+  const twimlStr = twiml.toString();
   console.log(`   TwiML: ${twimlStr}`);
   console.log('   ✅ Sending TwiML reply');
   console.log('━'.repeat(60));
@@ -122,7 +123,8 @@ app.post('/webhook/incoming', (req, res) => {
     success: true,
   };
 
-  res.type('text/xml').send(twimlStr);
+  res.set('Content-Type', 'text/xml');
+  res.send(twimlStr);
 });
 
 // ---------------------------------------------------------------------------
