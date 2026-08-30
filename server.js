@@ -96,18 +96,20 @@ app.post('/webhook/incoming', (req, res) => {
     reply += buyerInfo;
   }
 
-  console.log(`   Reply (first 120 chars): ${reply.substring(0, 120)}...`);
+  // Strip emoji + markdown for WhatsApp sandbox compatibility
+  const plainReply = reply
+    .replace(/[^\x00-\x7F]/g, '')   // remove non-ASCII (emoji)
+    .replace(/\*/g, '')              // remove bold markdown
+    .replace(/_/g, '')               // remove italic markdown
+    .trim();
 
-  // 5. Reply via TwiML inline response.
-  //    TwiML webhook replies are exempt from WhatsApp template requirements
-  //    (unlike REST API outbound messages which need ContentSid/approved templates).
-  //    The <Message> tag with the `to` attribute is required for WhatsApp sandbox.
-  const { MessagingResponse } = require('twilio').twiml;
-  const twiml = new MessagingResponse();
-  const msg = twiml.message({ to: from });
-  msg.body(reply);
+  console.log(`   Plain reply: ${plainReply.substring(0, 120)}...`);
 
-  const twimlStr = twiml.toString();
+  // 5. Simplest possible TwiML — no `to` attribute (inline reply to incoming message).
+  //    Adding `to` causes Twilio to treat it as a new outbound message (which needs templates).
+  //    Without `to`, Twilio replies directly to the sender of the incoming webhook.
+  const twimlStr = `<?xml version="1.0" encoding="UTF-8"?><Response><Message>${plainReply}</Message></Response>`;
+
   console.log(`   TwiML: ${twimlStr}`);
   console.log('   ✅ Sending TwiML reply');
   console.log('━'.repeat(60));
@@ -115,7 +117,7 @@ app.post('/webhook/incoming', (req, res) => {
   lastDebug = {
     timestamp: new Date().toISOString(),
     from, messageBody, parsed: { crop, district },
-    replyPreview: reply.substring(0, 200),
+    replyPreview: plainReply.substring(0, 200),
     twiml: twimlStr,
     success: true,
   };
