@@ -67,7 +67,7 @@ function topKey(obj) {
 // ---------------------------------------------------------------------------
 // POST /webhook/incoming — Twilio incoming message handler
 // ---------------------------------------------------------------------------
-app.post('/webhook/incoming', async (req, res) => {
+app.post('/webhook/incoming', (req, res) => {
   const messageBody = req.body.Body || '';
   const from = req.body.From || 'unknown';
 
@@ -91,34 +91,22 @@ app.post('/webhook/incoming', async (req, res) => {
 
   console.log(`   Reply: ${reply.substring(0, 80)}...`);
 
-  // 5. Send reply via Twilio (if credentials are configured)
-  if (
-    process.env.TWILIO_ACCOUNT_SID &&
-    process.env.TWILIO_AUTH_TOKEN &&
-    !process.env.TWILIO_ACCOUNT_SID.startsWith('AC' + 'xxx')
-  ) {
-    try {
-      const twilio = require('twilio')(
-        process.env.TWILIO_ACCOUNT_SID,
-        process.env.TWILIO_AUTH_TOKEN
-      );
+  // 5. Reply via TwiML — Twilio reads the reply directly from this XML response.
+  //    This is more reliable than the REST API, especially for the WhatsApp Sandbox.
+  //    We escape XML special characters to prevent malformed responses.
+  const xmlSafeReply = reply
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 
-      await twilio.messages.create({
-        body: reply,
-        from: process.env.TWILIO_WHATSAPP_NUMBER,
-        to: from,
-      });
-      console.log('   ✅ Reply sent via Twilio');
-    } catch (err) {
-      console.error('   ❌ Twilio send error:', err.message);
-    }
-  } else {
-    console.log('   ⚠️  Twilio not configured — reply logged only');
-  }
+  const twiml = `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Message>${xmlSafeReply}</Message>
+</Response>`;
 
-  // 6. Respond to Twilio's webhook with TwiML (acknowledges receipt)
-  //    We send an empty TwiML response since we're using the REST API to reply.
-  res.type('text/xml').send('<Response></Response>');
+  console.log('   ✅ Sending TwiML reply');
+  res.type('text/xml').send(twiml);
 });
 
 // ---------------------------------------------------------------------------
