@@ -67,11 +67,18 @@ function topKey(obj) {
 // ---------------------------------------------------------------------------
 // POST /webhook/incoming — Twilio incoming message handler
 // ---------------------------------------------------------------------------
+
+// Store last request/response for debugging via /api/debug
+let lastDebug = { message: 'No requests yet' };
+
 app.post('/webhook/incoming', (req, res) => {
   const messageBody = req.body.Body || '';
   const from = req.body.From || 'unknown';
 
+  console.log('━'.repeat(60));
   console.log(`📩 Message from ${from}: "${messageBody}"`);
+  console.log(`   Full body:`, JSON.stringify(req.body));
+  console.log(`   Content-Type: ${req.headers['content-type']}`);
 
   // 1. Parse the message to extract crop + district
   const { crop, district } = parse(messageBody);
@@ -89,24 +96,39 @@ app.post('/webhook/incoming', (req, res) => {
     reply += buyerInfo;
   }
 
-  console.log(`   Reply: ${reply.substring(0, 80)}...`);
+  console.log(`   Reply (first 120 chars): ${reply.substring(0, 120)}...`);
 
-  // 5. Reply via TwiML — Twilio reads the reply directly from this XML response.
-  //    This is more reliable than the REST API, especially for the WhatsApp Sandbox.
-  //    We escape XML special characters to prevent malformed responses.
-  const xmlSafeReply = reply
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+  // 5. Reply via Twilio's official TwiML helper (MessagingResponse).
+  //    This handles all XML encoding/escaping properly.
+  const { MessagingResponse } = require('twilio').twiml;
+  const twiml = new MessagingResponse();
+  twiml.message(reply);
 
-  const twiml = `<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-  <Message>${xmlSafeReply}</Message>
-</Response>`;
-
+  const twimlStr = twiml.toString();
+  console.log(`   TwiML length: ${twimlStr.length} bytes`);
+  console.log(`   TwiML: ${twimlStr}`);
   console.log('   ✅ Sending TwiML reply');
-  res.type('text/xml').send(twiml);
+  console.log('━'.repeat(60));
+
+  // Save for /api/debug
+  lastDebug = {
+    timestamp: new Date().toISOString(),
+    from,
+    messageBody,
+    parsed: { crop, district },
+    replyPreview: reply.substring(0, 200),
+    twimlLength: twimlStr.length,
+    twiml: twimlStr,
+  };
+
+  res.type('text/xml').send(twimlStr);
+});
+
+// ---------------------------------------------------------------------------
+// GET /api/debug — See last webhook request + response (for troubleshooting)
+// ---------------------------------------------------------------------------
+app.get('/api/debug', (req, res) => {
+  res.json(lastDebug);
 });
 
 // ---------------------------------------------------------------------------
