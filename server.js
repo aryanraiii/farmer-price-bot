@@ -1,17 +1,15 @@
 /**
- * server.js — Express server for the Farmer Mandi Price Bot (Kapso SDK).
+ * server.js — Express server for the Farmer Mandi Price Bot.
  *
  * Routes:
- *   GET  /webhook          — Kapso/Meta webhook verification
- *   POST /webhook          — Receives incoming WhatsApp messages
- *   GET  /api/stats        — In-memory usage statistics (JSON)
- *   GET  /                 — Dashboard UI (serves public/index.html)
+ *   POST /webhook/incoming  — Twilio webhook for incoming WhatsApp/SMS messages
+ *   GET  /api/stats          — In-memory usage statistics (JSON)
+ *   GET  /                   — Dashboard UI (serves public/index.html)
  */
 
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
-const { WhatsAppClient } = require('@kapso/whatsapp-cloud-api');
 const { parse } = require('./parser');
 const { getPrice } = require('./priceEngine');
 const { findBuyers } = require('./matcher');
@@ -19,16 +17,10 @@ const { findBuyers } = require('./matcher');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Kapso API Client
-const KAPSO_API_KEY = process.env.KAPSO_API_KEY;
-const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
-
-const client = new WhatsAppClient({
-  baseUrl: 'https://api.kapso.ai/meta/whatsapp', // Use Kapso Proxy
-  kapsoApiKey: KAPSO_API_KEY,
-});
-
+// ---------------------------------------------------------------------------
 // Middleware
+// ---------------------------------------------------------------------------
+app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -54,75 +46,72 @@ function topKey(obj) {
   return entries[0][0];
 }
 
+// Store last request/response for debugging via /api/debug
+let lastDebug = { message: 'No requests yet' };
+
 // ---------------------------------------------------------------------------
-// GET /webhook — Webhook Verification
+// POST /webhook/incoming — Twilio incoming message handler
 // ---------------------------------------------------------------------------
-app.get('/webhook', (req, res) => {
-  const challenge = req.query['hub.challenge'];
-  res.status(200).send(challenge || 'OK');
+app.post('/webhook/incoming', (req, res) => {
+  const messageBody = req.body.Body || '';
+  const from = req.body.From || 'unknown';
+
+  console.log('━'.repeat(60));
+  console.log(`📩 Message from ${from}: "${messageBody}"`);
+  console.log(`   Full body:`, JSON.stringify(req.body));
+
+  // 1. Parse the message to extract crop + district
+  const { crop, district } = parse(messageBody);
+  console.log(`   Parsed → crop: ${crop}, district: ${district}`);
+
+  // 2. Track for stats
+  trackQuery(crop, district);
+
+  // 3. Look up price and build reply
+  let reply = getPrice(crop, district);
+
+  // 4. Append buyer matches if available
+  const buyerInfo = findBuyers(crop, district);
+  if (buyerInfo) {
+    reply += buyerInfo;
+  }
+
+  // Strip emoji + markdown for WhatsApp sandbox compatibility
+  const plainReply = reply
+    .replace(/[^\x00-\x7F]/g, '')   // remove non-ASCII (emoji)
+    .replace(/\*/g, '')              // remove bold markdown
+    .replace(/_/g, '')               // remove italic markdown
+    .trim();
+
+  console.log(`   Plain reply: ${plainReply.substring(0, 120)}...`);
+
+  // 5. Reply via TwiML inline response.
+  const { MessagingResponse } = require('twilio').twiml;
+  const twiml = new MessagingResponse();
+  twiml.message(plainReply);
+
+  const twimlStr = twiml.toString();
+  console.log(`   TwiML: ${twimlStr}`);
+  console.log('   ✅ Sending TwiML reply');
+  console.log('━'.repeat(60));
+
+  lastDebug = {
+    timestamp: new Date().toISOString(),
+    from, messageBody, parsed: { crop, district },
+    replyPreview: plainReply.substring(0, 200),
+    twiml: twimlStr,
+    success: true,
+  };
+
+  res.set('Content-Type', 'text/xml');
+  res.send(twimlStr);
 });
 
 // ---------------------------------------------------------------------------
-// POST /webhook — Receive Messages from Kapso
+// GET /api/debug — See last webhook request + response
 // ---------------------------------------------------------------------------
-app.post('/webhook', async (req, res) => {
-  // Acknowledge receipt within 10s
-  res.sendStatus(200);
-
-  try {
-    const isBatch = req.headers['x-webhook-batch'] === 'true' || req.body.batch === true;
-    const payloads = isBatch ? req.body.data : [req.body];
-
-    for (const payload of payloads) {
-      // Check if it's a standard Meta format payload
-      if (payload.object === 'whatsapp_business_account') {
-        for (const entry of payload.entry) {
-          for (const change of entry.changes) {
-            const value = change.value;
-            
-            // Check for a text message
-            if (value && value.messages && value.messages[0]) {
-              const message = value.messages[0];
-              
-              if (message.type === 'text') {
-                const from = message.from;
-                const messageBody = message.text.body;
-
-                console.log('━'.repeat(60));
-                console.log(`📩 Message from ${from}: "${messageBody}"`);
-
-                const { crop, district } = parse(messageBody);
-                trackQuery(crop, district);
-
-                let reply = getPrice(crop, district);
-                const buyerInfo = findBuyers(crop, district);
-                if (buyerInfo) reply += buyerInfo;
-
-                // Send reply via Kapso SDK
-                if (KAPSO_API_KEY && PHONE_NUMBER_ID) {
-                  try {
-                    await client.messages.sendText({
-                      phoneNumberId: PHONE_NUMBER_ID,
-                      to: from,
-                      body: reply
-                    });
-                    console.log('   ✅ Kapso Reply SENT!');
-                  } catch (error) {
-                    console.error('   ❌ Kapso SEND FAILED:', error.message);
-                  }
-                } else {
-                  console.log('   ⚠️  Kapso credentials MISSING — reply logged only');
-                }
-                console.log('━'.repeat(60));
-              }
-            }
-          }
-        }
-      }
-    }
-  } catch (err) {
-    console.error('Error processing webhook:', err);
-  }
+app.get('/api/debug', (req, res) => {
+  res.json(lastDebug);
 });
 
 // ---------------------------------------------------------------------------
@@ -157,5 +146,9 @@ app.get('/api/test-reply', (req, res) => {
 // Start server
 // ---------------------------------------------------------------------------
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`\n🚀 Farmer Mandi Price Bot (Kapso API) running on http://localhost:${PORT}`);
+  console.log(`\n🚀 Farmer Mandi Price Bot running on http://localhost:${PORT}`);
+  console.log(`   Webhook URL: POST http://localhost:${PORT}/webhook/incoming`);
+  console.log(`   Dashboard:   GET  http://localhost:${PORT}/`);
+  console.log(`   Stats API:   GET  http://localhost:${PORT}/api/stats`);
+  console.log(`   Test:        GET  http://localhost:${PORT}/api/test-reply?message=onion+nashik\n`);
 });

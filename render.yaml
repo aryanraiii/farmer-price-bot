@@ -9,9 +9,11 @@ services:
     buildCommand: npm install
     startCommand: node server.js
     envVars:
-      - key: KAPSO_API_KEY
+      - key: TWILIO_ACCOUNT_SID
         sync: false
-      - key: PHONE_NUMBER_ID
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_WHATSAPP_NUMBER
         sync: false
       - key: PORT
         value: 3000
