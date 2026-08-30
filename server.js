@@ -1,15 +1,17 @@
 /**
- * server.js — Express server for the Farmer Mandi Price Bot.
+ * server.js — Express server for the Farmer Mandi Price Bot (Meta WhatsApp Cloud API).
  *
  * Routes:
- *   POST /webhook/incoming  — Twilio webhook for incoming WhatsApp/SMS messages
- *   GET  /api/stats          — In-memory usage statistics (JSON)
- *   GET  /                   — Dashboard UI (serves public/index.html)
+ *   GET  /webhook          — Meta webhook verification (hub.challenge)
+ *   POST /webhook          — Receives incoming WhatsApp messages from Meta
+ *   GET  /api/stats        — In-memory usage statistics (JSON)
+ *   GET  /                 — Dashboard UI (serves public/index.html)
  */
 
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
+const axios = require('axios');
 const { parse } = require('./parser');
 const { getPrice } = require('./priceEngine');
 const { findBuyers } = require('./matcher');
@@ -17,11 +19,13 @@ const { findBuyers } = require('./matcher');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ---------------------------------------------------------------------------
+// Meta WhatsApp Cloud API credentials
+const META_VERIFY_TOKEN = process.env.META_VERIFY_TOKEN || 'my_secret_verify_token_123';
+const META_ACCESS_TOKEN = process.env.META_ACCESS_TOKEN;
+const META_PHONE_NUMBER_ID = process.env.META_PHONE_NUMBER_ID;
+
 // Middleware
-// ---------------------------------------------------------------------------
-app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
+app.use(express.json()); 
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ---------------------------------------------------------------------------
@@ -46,65 +50,111 @@ function topKey(obj) {
   return entries[0][0];
 }
 
-// Store last request/response for debugging via /api/debug
 let lastDebug = { message: 'No requests yet' };
 
 // ---------------------------------------------------------------------------
-// POST /webhook/incoming — Twilio incoming message handler
+// GET /webhook — Webhook Verification (Required by Meta)
 // ---------------------------------------------------------------------------
-app.post('/webhook/incoming', (req, res) => {
-  const messageBody = req.body.Body || '';
-  const from = req.body.From || 'unknown';
+app.get('/webhook', (req, res) => {
+  const mode = req.query['hub.mode'];
+  const token = req.query['hub.verify_token'];
+  const challenge = req.query['hub.challenge'];
 
-  console.log('━'.repeat(60));
-  console.log(`📩 Message from ${from}: "${messageBody}"`);
-  console.log(`   Full body:`, JSON.stringify(req.body));
-
-  // 1. Parse the message to extract crop + district
-  const { crop, district } = parse(messageBody);
-  console.log(`   Parsed → crop: ${crop}, district: ${district}`);
-
-  // 2. Track for stats
-  trackQuery(crop, district);
-
-  // 3. Look up price and build reply
-  let reply = getPrice(crop, district);
-
-  // 4. Append buyer matches if available
-  const buyerInfo = findBuyers(crop, district);
-  if (buyerInfo) {
-    reply += buyerInfo;
+  if (mode && token) {
+    if (mode === 'subscribe' && token === META_VERIFY_TOKEN) {
+      console.log('✅ Meta Webhook Verified');
+      res.status(200).send(challenge);
+    } else {
+      console.error('❌ Meta Webhook Verification Failed: Tokens do not match');
+      res.sendStatus(403);
+    }
+  } else {
+    res.sendStatus(400);
   }
+});
 
-  // Strip emoji + markdown for WhatsApp sandbox compatibility
-  const plainReply = reply
-    .replace(/[^\x00-\x7F]/g, '')   // remove non-ASCII (emoji)
-    .replace(/\*/g, '')              // remove bold markdown
-    .replace(/_/g, '')               // remove italic markdown
-    .trim();
+// ---------------------------------------------------------------------------
+// POST /webhook — Receive Messages from Meta
+// ---------------------------------------------------------------------------
+app.post('/webhook', async (req, res) => {
+  const body = req.body;
 
-  console.log(`   Plain reply: ${plainReply.substring(0, 120)}...`);
+  if (body.object === 'whatsapp_business_account') {
+    // Meta requires an immediate 200 OK response
+    res.sendStatus(200);
 
-  // 5. Reply via TwiML inline response.
-  const { MessagingResponse } = require('twilio').twiml;
-  const twiml = new MessagingResponse();
-  twiml.message(plainReply);
+    for (const entry of body.entry) {
+      for (const change of entry.changes) {
+        const value = change.value;
 
-  const twimlStr = twiml.toString();
-  console.log(`   TwiML: ${twimlStr}`);
-  console.log('   ✅ Sending TwiML reply');
-  console.log('━'.repeat(60));
+        // Ensure this is an actual text message and not a status update (read/delivered)
+        if (value && value.messages && value.messages[0]) {
+          const message = value.messages[0];
+          
+          if (message.type === 'text') {
+            const from = message.from; // Sender's phone number
+            const messageBody = message.text.body;
 
-  lastDebug = {
-    timestamp: new Date().toISOString(),
-    from, messageBody, parsed: { crop, district },
-    replyPreview: plainReply.substring(0, 200),
-    twiml: twimlStr,
-    success: true,
-  };
+            console.log('━'.repeat(60));
+            console.log(`📩 Message from ${from}: "${messageBody}"`);
 
-  res.set('Content-Type', 'text/xml');
-  res.send(twimlStr);
+            const { crop, district } = parse(messageBody);
+            trackQuery(crop, district);
+
+            let reply = getPrice(crop, district);
+            const buyerInfo = findBuyers(crop, district);
+            if (buyerInfo) {
+              reply += buyerInfo;
+            }
+
+            // Clean up text
+            const plainReply = reply.replace(/[^\x00-\x7F]/g, '').trim();
+
+            console.log(`   Reply preview: ${plainReply.substring(0, 100)}...`);
+
+            lastDebug = {
+              timestamp: new Date().toISOString(),
+              from, messageBody, parsed: { crop, district },
+              replyPreview: plainReply.substring(0, 200)
+            };
+
+            // Send reply via Meta Cloud API
+            if (META_ACCESS_TOKEN && META_PHONE_NUMBER_ID) {
+              try {
+                const response = await axios({
+                  method: 'POST',
+                  url: `https://graph.facebook.com/v17.0/${META_PHONE_NUMBER_ID}/messages`,
+                  headers: {
+                    'Authorization': `Bearer ${META_ACCESS_TOKEN}`,
+                    'Content-Type': 'application/json'
+                  },
+                  data: {
+                    messaging_product: 'whatsapp',
+                    to: from,
+                    type: 'text',
+                    text: { body: reply } 
+                  }
+                });
+                console.log(`   ✅ Meta Reply SENT! Message ID: ${response.data.messages[0].id}`);
+                lastDebug.success = true;
+                lastDebug.messageId = response.data.messages[0].id;
+              } catch (error) {
+                console.error(`   ❌ Meta SEND FAILED!`);
+                console.error(`   Error details:`, error.response ? JSON.stringify(error.response.data) : error.message);
+                lastDebug.success = false;
+                lastDebug.error = error.response ? error.response.data : error.message;
+              }
+            } else {
+              console.log('   ⚠️  Meta credentials MISSING — reply logged only');
+            }
+            console.log('━'.repeat(60));
+          }
+        }
+      }
+    }
+  } else {
+    res.sendStatus(404);
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -146,9 +196,5 @@ app.get('/api/test-reply', (req, res) => {
 // Start server
 // ---------------------------------------------------------------------------
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`\n🚀 Farmer Mandi Price Bot running on http://localhost:${PORT}`);
-  console.log(`   Webhook URL: POST http://localhost:${PORT}/webhook/incoming`);
-  console.log(`   Dashboard:   GET  http://localhost:${PORT}/`);
-  console.log(`   Stats API:   GET  http://localhost:${PORT}/api/stats`);
-  console.log(`   Test:        GET  http://localhost:${PORT}/api/test-reply?message=onion+nashik\n`);
+  console.log(`\n🚀 Farmer Mandi Price Bot (Meta API) running on http://localhost:${PORT}`);
 });
