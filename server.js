@@ -98,65 +98,29 @@ app.post('/webhook/incoming', (req, res) => {
 
   console.log(`   Reply (first 120 chars): ${reply.substring(0, 120)}...`);
 
-  // 5. Send reply via Twilio REST API.
-  //    Immediately return empty TwiML to acknowledge the webhook,
-  //    then send the reply as a separate API call.
-  res.type('text/xml').send('<Response></Response>');
+  // 5. Reply via TwiML inline response.
+  //    TwiML webhook replies are exempt from WhatsApp template requirements
+  //    (unlike REST API outbound messages which need ContentSid/approved templates).
+  //    The <Message> tag with the `to` attribute is required for WhatsApp sandbox.
+  const { MessagingResponse } = require('twilio').twiml;
+  const twiml = new MessagingResponse();
+  const msg = twiml.message({ to: from });
+  msg.body(reply);
 
-  // Now send the actual reply via REST API
-  const accountSid = process.env.TWILIO_ACCOUNT_SID;
-  const authToken = process.env.TWILIO_AUTH_TOKEN;
-  const twilioFrom = process.env.TWILIO_WHATSAPP_NUMBER;
+  const twimlStr = twiml.toString();
+  console.log(`   TwiML: ${twimlStr}`);
+  console.log('   ✅ Sending TwiML reply');
+  console.log('━'.repeat(60));
 
-  console.log(`   Twilio SID: ${accountSid ? accountSid.substring(0, 6) + '...' : 'MISSING'}`);
-  console.log(`   Twilio From: ${twilioFrom || 'MISSING'}`);
-  console.log(`   Sending to: ${from}`);
+  lastDebug = {
+    timestamp: new Date().toISOString(),
+    from, messageBody, parsed: { crop, district },
+    replyPreview: reply.substring(0, 200),
+    twiml: twimlStr,
+    success: true,
+  };
 
-  if (!accountSid || !authToken || !twilioFrom) {
-    console.log('   ❌ Twilio credentials MISSING — cannot send reply');
-    lastDebug = {
-      timestamp: new Date().toISOString(),
-      error: 'Twilio credentials missing',
-      from, messageBody, parsed: { crop, district },
-    };
-    return;
-  }
-
-  const client = require('twilio')(accountSid, authToken);
-
-  client.messages
-    .create({
-      body: reply,
-      from: twilioFrom,
-      to: from,
-    })
-    .then((msg) => {
-      console.log(`   ✅ Reply SENT! SID: ${msg.sid}, Status: ${msg.status}`);
-      console.log('━'.repeat(60));
-      lastDebug = {
-        timestamp: new Date().toISOString(),
-        from, messageBody, parsed: { crop, district },
-        replyPreview: reply.substring(0, 200),
-        twilioMessageSid: msg.sid,
-        twilioStatus: msg.status,
-        success: true,
-      };
-    })
-    .catch((err) => {
-      console.error(`   ❌ Twilio SEND FAILED!`);
-      console.error(`   Error code: ${err.code}`);
-      console.error(`   Error message: ${err.message}`);
-      console.error(`   More info: ${err.moreInfo || 'N/A'}`);
-      console.log('━'.repeat(60));
-      lastDebug = {
-        timestamp: new Date().toISOString(),
-        from, messageBody, parsed: { crop, district },
-        error: err.message,
-        errorCode: err.code,
-        moreInfo: err.moreInfo,
-        success: false,
-      };
-    });
+  res.type('text/xml').send(twimlStr);
 });
 
 // ---------------------------------------------------------------------------
