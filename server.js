@@ -178,6 +178,26 @@ app.get('/api/stats', (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
+// POST /api/chat — Chat UI endpoint (reuses bot logic, no Twilio/Meta needed)
+// ---------------------------------------------------------------------------
+app.post('/api/chat', (req, res) => {
+  const messageBody = (req.body.message || '').trim();
+  if (!messageBody) {
+    return res.json({ reply: 'Please type a crop and district, e.g. "onion nashik"' });
+  }
+
+  const { crop, district } = parse(messageBody);
+  trackQuery(crop, district);
+
+  let reply = getPrice(crop, district);
+  const buyerInfo = findBuyers(crop, district);
+  if (buyerInfo) reply += buyerInfo;
+
+  console.log(`💬 Chat: "${messageBody}" → crop=${crop}, district=${district}`);
+  res.json({ reply, parsed: { crop, district } });
+});
+
+// ---------------------------------------------------------------------------
 // GET /api/test-reply — Quick test endpoint
 // ---------------------------------------------------------------------------
 app.get('/api/test-reply', (req, res) => {
